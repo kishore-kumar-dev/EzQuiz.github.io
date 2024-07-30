@@ -26,12 +26,14 @@ const questions = [
     }
 ];
 
-let currentQuestionIndex = parseInt(localStorage.getItem('currentQuestionIndex')) || 0;
-let score = parseInt(localStorage.getItem('score')) || 0;
+let currentQuestionIndex = 0;
+let score = 0;
 let timerId;
 let timeLeft;
+let username = '';
 
 const startBtn = document.getElementById('start-btn');
+const usernameInput = document.getElementById('username');
 const displayContainer = document.getElementById('display-container');
 const questionNumber = document.getElementById('question-number');
 const timer = document.getElementById('timer');
@@ -43,15 +45,48 @@ const scoreContainer = document.querySelector('.score-container');
 const userScoreElement = document.getElementById('user-score');
 const restartBtn = document.getElementById('restart');
 const highScoreElement = document.getElementById('high-score');
+const scoreboard = document.getElementById('scoreboard');
+const endScoreboard = document.getElementById('end-scoreboard');
 
 startBtn.addEventListener('click', startQuiz);
 nextBtn.addEventListener('click', loadNextQuestion);
 restartBtn.addEventListener('click', restartQuiz);
 
+function loadScoreboard() {
+    const scores = JSON.parse(localStorage.getItem('scores')) || [];
+    scoreboard.innerHTML = '';
+    endScoreboard.innerHTML = '';
+
+    scores.sort((a, b) => b.score - a.score);
+    const topScores = scores.slice(0, 5);
+
+    if (topScores.length === 0) {
+        const noScoreItem = document.createElement('div');
+        noScoreItem.textContent = "No scores yet!";
+        scoreboard.appendChild(noScoreItem);
+        endScoreboard.appendChild(noScoreItem.cloneNode(true));
+    } else {
+        topScores.forEach(({ name, score }, index) => {
+            const scoreItem = document.createElement('div');
+            scoreItem.classList.add('scoreboard-item');
+            scoreItem.textContent = `${index + 1}. ${name}: ${score}`;
+            scoreboard.appendChild(scoreItem);
+            endScoreboard.appendChild(scoreItem.cloneNode(true));
+        });
+    }
+}
+
 function startQuiz() {
+    username = usernameInput.value.trim();
+    if (username === '') {
+        alert('Please enter your name to start the quiz');
+        return;
+    }
+    localStorage.setItem('username', username);
     startBtn.parentElement.classList.add('hide');
     displayContainer.classList.remove('hide');
-    loadHighScore();
+    // loadHighScore();
+    loadScoreboard();
     loadQuestion();
 }
 
@@ -130,25 +165,22 @@ function loadNextQuestion() {
 
 function displayScore() {
     displayContainer.classList.add('hide');
+    startBtn.parentElement.classList.add('hide');
     scoreContainer.classList.remove('hide');
     userScoreElement.textContent = `Your Score: ${score}`;
-    saveHighScore();
     clearProgress();
+    saveHighScore();
+    // clearAllScores();
+    loadScoreboard();
 }
 
 function saveHighScore() {
-    let highScore = parseInt(localStorage.getItem('highScore')) || 0;
-    if (score > highScore) {
-        localStorage.setItem('highScore', score);
-        highScoreElement.textContent = `High Score: ${score} (New High Score!)`;
-    } else {
-        highScoreElement.textContent = `High Score: ${highScore}`;
-    }
-}
-
-function loadHighScore() {
-    let highScore = parseInt(localStorage.getItem('highScore')) || 0;
-    highScoreElement.textContent = `High Score: ${highScore}`;
+    let scores = JSON.parse(localStorage.getItem('scores')) || [];
+    scores.push({ name: username, score });
+    scores.sort((a, b) => b.score - a.score);
+    scores = scores.slice(0, 5);  
+    localStorage.setItem('scores', JSON.stringify(scores));
+    loadScoreboard();
 }
 
 function saveProgress() {
@@ -167,4 +199,10 @@ function restartQuiz() {
     scoreContainer.classList.add('hide');
     startBtn.parentElement.classList.remove('hide');
     clearProgress();
+    loadScoreboard();
+}
+
+function clearAllScores() {
+    localStorage.removeItem('scores');
+    loadScoreboard();
 }

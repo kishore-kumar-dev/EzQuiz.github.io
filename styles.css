@@ -13,6 +13,17 @@ body {
     align-items: center;
 }
 
+#username {
+    font-size: 1.2rem;
+    padding: 0.5em;
+    margin-bottom: 1em;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    outline: none;
+    text-align: center;
+}
+
+
 .start-screen, .score-container {
     position: absolute;
     top: 0;
@@ -24,6 +35,17 @@ body {
     justify-content: center;
     background-color: rgba(0, 0, 0, 0.8);
     transition: opacity 0.3s ease-in-out;
+}
+
+.scoreboard {
+    margin-top: 1.5em;
+    font-size: 1rem;
+    color: white;
+    text-align: center;
+}
+
+.scoreboard-item {
+    padding: 0.3em 0;
 }
 
 button {
