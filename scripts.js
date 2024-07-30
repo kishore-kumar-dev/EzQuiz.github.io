@@ -52,6 +52,7 @@ startBtn.addEventListener('click', startQuiz);
 nextBtn.addEventListener('click', loadNextQuestion);
 restartBtn.addEventListener('click', restartQuiz);
 
+//ScoreBoard function
 function loadScoreboard() {
     const scores = JSON.parse(localStorage.getItem('scores')) || [];
     scoreboard.innerHTML = '';
@@ -76,6 +77,8 @@ function loadScoreboard() {
     }
 }
 
+//Start Quiz function
+
 function startQuiz() {
     username = usernameInput.value.trim();
     if (username === '') {
@@ -89,6 +92,8 @@ function startQuiz() {
     loadScoreboard();
     loadQuestion();
 }
+
+//Load Question function
 
 function loadQuestion() {
     resetState();
@@ -106,6 +111,8 @@ function loadQuestion() {
     saveProgress();
 }
 
+//Reset State function
+
 function resetState() {
     clearInterval(timerId);
     while (optionsElement.firstChild) {
@@ -114,6 +121,8 @@ function resetState() {
     nextBtn.classList.add('hide');
     feedbackElement.classList.add('hide');
 }
+
+//Start Timer function
 
 function startTimer(seconds) {
     timeLeft = seconds;
@@ -127,6 +136,7 @@ function startTimer(seconds) {
         }
     }, 1000);
 }
+//Select Answer function
 
 function selectAnswer(e) {
     clearInterval(timerId);
@@ -153,6 +163,7 @@ function selectAnswer(e) {
     nextBtn.classList.remove('hide');
     saveProgress();
 }
+//Load Next Question function
 
 function loadNextQuestion() {
     currentQuestionIndex++;
@@ -162,6 +173,8 @@ function loadNextQuestion() {
         displayScore();
     }
 }
+
+//Display Score function
 
 function displayScore() {
     displayContainer.classList.add('hide');
@@ -174,6 +187,7 @@ function displayScore() {
     loadScoreboard();
 }
 
+//Saving High Score function
 function saveHighScore() {
     let scores = JSON.parse(localStorage.getItem('scores')) || [];
     scores.push({ name: username, score });
@@ -183,6 +197,7 @@ function saveHighScore() {
     loadScoreboard();
 }
 
+//Saving Progress function for local storage
 function saveProgress() {
     localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
     localStorage.setItem('score', score);
