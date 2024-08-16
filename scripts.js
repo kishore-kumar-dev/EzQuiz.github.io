@@ -7,6 +7,9 @@ let username = '';
 
 const startBtn = document.getElementById('start-btn');
 const usernameInput = document.getElementById('username');
+
+const categorySelect = document.getElementById('category-select');
+const difficultySelect = document.getElementById('difficulty-select');
 const displayContainer = document.getElementById('display-container');
 const questionNumber = document.getElementById('question-number');
 const timer = document.getElementById('timer');
@@ -26,7 +29,11 @@ nextBtn.addEventListener('click', loadNextQuestion);
 restartBtn.addEventListener('click', restartQuiz);
 clearScoresBtn.addEventListener('click', clearAllScores);
 
-// Fetching questions from Open Trivia Database API
+// usernameInput.addEventListener('input', function() {
+//     this.value = this.value.toUpperCase();
+// });
+
+
 async function fetchQuestions(amount = 5, category = '', difficulty = 'medium') {
     const url = `https://opentdb.com/api.php?amount=${amount}&category=${category}&difficulty=${difficulty}&type=multiple`;
     try {
@@ -44,52 +51,77 @@ async function fetchQuestions(amount = 5, category = '', difficulty = 'medium') 
     }
 }
 
-// Load the scoreboard from localStorage
+
+
 function loadScoreboard() {
     const scores = JSON.parse(localStorage.getItem('scores')) || [];
     scoreboard.innerHTML = '';
     endScoreboard.innerHTML = '';
 
-    scores.sort((a, b) => b.score - a.score);
-    const topScores = scores.slice(0, 5);
+    const scoreboardContent = document.createElement('div');
+    scoreboardContent.classList.add('scoreboard-container');
 
-    if (topScores.length === 0) {
+    const title = document.createElement('div');
+    title.classList.add('scoreboard-title');
+    title.textContent = 'Top Scores';
+    scoreboardContent.appendChild(title);
+
+    if (scores.length === 0) {
         const noScoreItem = document.createElement('div');
+        noScoreItem.classList.add('no-scores');
         noScoreItem.textContent = "No scores yet!";
-        scoreboard.appendChild(noScoreItem);
-        endScoreboard.appendChild(noScoreItem.cloneNode(true));
+        scoreboardContent.appendChild(noScoreItem);
     } else {
-        topScores.forEach(({ name, score }, index) => {
+        scores.forEach(({ name, score }, index) => {
             const scoreItem = document.createElement('div');
             scoreItem.classList.add('scoreboard-item');
-            scoreItem.textContent = `${index + 1}. ${name}: ${score}`;
-            scoreboard.appendChild(scoreItem);
-            endScoreboard.appendChild(scoreItem.cloneNode(true));
+            
+            const rank = document.createElement('span');
+            rank.classList.add('scoreboard-rank');
+            rank.textContent = `${index + 1}.`;
+            
+            const username = document.createElement('span');
+            username.classList.add('scoreboard-username');
+            username.textContent = name.toUpperCase();
+            
+            const userScore = document.createElement('span');
+            userScore.classList.add('scoreboard-score');
+            userScore.textContent = score;
+            
+            scoreItem.appendChild(rank);
+            scoreItem.appendChild(username);
+            scoreItem.appendChild(userScore);
+            
+            scoreboardContent.appendChild(scoreItem);
         });
     }
+
+    scoreboard.appendChild(scoreboardContent);
+    endScoreboard.appendChild(scoreboardContent.cloneNode(true));
 }
 
-// Clear the scoreboard data
 function clearAllScores() {
-    localStorage.removeItem('scores'); // Removes the scores from localStorage
-    loadScoreboard(); // Reloade's the scoreboard to reflect the changes
+    localStorage.removeItem('scores');
+    loadScoreboard();
     alert('Scoreboard has been cleared!');
 }
 
-// Starts the quiz
 async function startQuiz() {
-    username = usernameInput.value.trim();
+    username = usernameInput.value.trim().toUpperCase();
+    const category = categorySelect.value;
+    const difficulty = difficultySelect.value;
+
     if (username === '') {
         alert('Please enter your name to start the quiz');
         return;
     }
+
     localStorage.setItem('username', username);
     startBtn.parentElement.classList.add('hide');
     displayContainer.classList.remove('hide');
     loadScoreboard();
 
-    // Fetching questions from API
-    questions = await fetchQuestions();
+    questions = await fetchQuestions(5, category, difficulty);
     if (questions.length > 0) {
         loadQuestion();
     } else {
@@ -98,7 +130,6 @@ async function startQuiz() {
     }
 }
 
-// Loads a question
 function loadQuestion() {
     resetState();
     startTimer(10);
@@ -115,7 +146,6 @@ function loadQuestion() {
     saveProgress();
 }
 
-// Resets the state for the next question
 function resetState() {
     clearInterval(timerId);
     while (optionsElement.firstChild) {
@@ -125,7 +155,6 @@ function resetState() {
     feedbackElement.classList.add('hide');
 }
 
-// Starts the timer for each question
 function startTimer(seconds) {
     timeLeft = seconds;
     timer.textContent = `${timeLeft}s`;
@@ -139,7 +168,6 @@ function startTimer(seconds) {
     }, 1000);
 }
 
-// Handles answer selection
 function selectAnswer(e) {
     clearInterval(timerId);
     const selectedBtn = e ? e.target : null;
@@ -160,61 +188,81 @@ function selectAnswer(e) {
         score++;
     }
     
-    feedbackElement.textContent = correct ? 'Correct!' : `The correct answer was ${questions[currentQuestionIndex].answer}`;
+    feedbackElement.textContent = correct ? 'Correct!' : 'Wrong!';
     feedbackElement.classList.remove('hide');
     nextBtn.classList.remove('hide');
-    saveProgress();
 }
 
-// Loads the next question
 function loadNextQuestion() {
     currentQuestionIndex++;
     if (currentQuestionIndex < questions.length) {
         loadQuestion();
     } else {
-        displayScore();
+        endQuiz();
     }
 }
 
-// Displays the final score
-function displayScore() {
+function endQuiz() {
     displayContainer.classList.add('hide');
-    startBtn.parentElement.classList.add('hide');
     scoreContainer.classList.remove('hide');
     userScoreElement.textContent = `Your Score: ${score}`;
-    clearProgress();
-    saveHighScore();
+
+    saveScore();
     loadScoreboard();
 }
 
-// Saves the high score to localStorage
-function saveHighScore() {
-    let scores = JSON.parse(localStorage.getItem('scores')) || [];
-    scores.push({ name: username, score });
+function saveScore() {
+    const scores = JSON.parse(localStorage.getItem('scores')) || [];
+    const upperUsername = username.toUpperCase();
+    
+    // Check if the username already exists
+    const existingScoreIndex = scores.findIndex(item => item.name.toUpperCase() === upperUsername);
+    
+    if (existingScoreIndex !== -1) {
+        // If the username exists, update the score if the new score is higher
+        if (score > scores[existingScoreIndex].score) {
+            scores[existingScoreIndex].score = score;
+        }
+    } else {
+        // If the username doesn't exist, add a new entry
+        scores.push({ name: upperUsername, score });
+    }
+    
+    // Sort scores in descending order
     scores.sort((a, b) => b.score - a.score);
-    scores = scores.slice(0, 5);  
-    localStorage.setItem('scores', JSON.stringify(scores));
-    loadScoreboard();
+    
+    // Keep only the top 5 scores
+    const topScores = scores.slice(0, 5);
+    
+    localStorage.setItem('scores', JSON.stringify(topScores));
 }
 
-// Saves the current progress in localStorage
 function saveProgress() {
-    localStorage.setItem('currentQuestionIndex', currentQuestionIndex);
-    localStorage.setItem('score', score);
+    const progress = {
+        currentQuestionIndex,
+        score,
+        questions
+    };
+    localStorage.setItem('quizProgress', JSON.stringify(progress));
 }
 
-// Clears the current progress
-function clearProgress() {
-    localStorage.removeItem('currentQuestionIndex');
-    localStorage.removeItem('score');
+function loadProgress() {
+    const progress = JSON.parse(localStorage.getItem('quizProgress'));
+    if (progress) {
+        currentQuestionIndex = progress.currentQuestionIndex;
+        score = progress.score;
+        questions = progress.questions;
+    }
 }
 
-// Restarts the quiz
 function restartQuiz() {
     score = 0;
     currentQuestionIndex = 0;
+    questions = [];
+    displayContainer.classList.add('hide');
     scoreContainer.classList.add('hide');
     startBtn.parentElement.classList.remove('hide');
-    clearProgress();
     loadScoreboard();
 }
+
+document.addEventListener('DOMContentLoaded', loadScoreboard);
